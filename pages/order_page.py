@@ -1,38 +1,36 @@
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions
-from locators.order_page_locators import OrderPageLocators
+from locators.order_page_locators import *
+from pages.base_page import BasePage
+import allure
 
 
-class OrderPage:
-    def __init__(self, driver):
-        self.driver = driver
+class OrderPage(BasePage):
 
+    @allure.step('Кликнуть по кнопке "Заказать" в {position}')
     def click_order_button(self, position='top'):
         if position == 'top':
             locator = OrderPageLocators.ORDER_BUTTON_TOP
         else:
             locator = OrderPageLocators.ORDER_BUTTON_BOTTOM
+        button = self.find(locator)
+        self.scroll_to(locator)
+        self.click(locator)
 
-        button = WebDriverWait(self.driver, 5).until(expected_conditions.visibility_of_element_located(locator))
-        self.driver.execute_script('arguments[0].scrollIntoView();', button)
-        WebDriverWait(self.driver, 5).until(expected_conditions.element_to_be_clickable(locator)).click()
-
+    @allure.step('Заполнить информацию о заказчике: {first_name} {last_name}')
     def fill_customer_info(self, first_name, last_name, address, metro_station, phone):
-        self.driver.find_element(*OrderPageLocators.FIRST_NAME_INPUT).send_keys(first_name)
-        self.driver.find_element(*OrderPageLocators.LAST_NAME_INPUT).send_keys(last_name)
-        self.driver.find_element(*OrderPageLocators.ADDRESS_INPUT).send_keys(address)
-        metro_input = self.driver.find_element(*OrderPageLocators.METRO_STATION_INPUT)
-        metro_input.send_keys(metro_station)
-        WebDriverWait(self.driver, 5).until(expected_conditions.element_to_be_clickable(OrderPageLocators.METRO_STATION_DROPDOWN)).click()
-        self.driver.find_element(*OrderPageLocators.PHONE_INPUT).send_keys(phone)
-        self.driver.find_element(*OrderPageLocators.NEXT_BUTTON).click()
+        self.enter_text(OrderPageLocators.FIRST_NAME_INPUT, first_name)
+        self.enter_text(OrderPageLocators.LAST_NAME_INPUT, last_name)
+        self.enter_text(OrderPageLocators.ADDRESS_INPUT, address)
+        self.enter_text(OrderPageLocators.METRO_STATION_INPUT, metro_station)
+        self.click(OrderPageLocators.METRO_STATION_DROPDOWN)
+        self.enter_text(OrderPageLocators.PHONE_INPUT, phone)
+        self.click(OrderPageLocators.NEXT_BUTTON)
 
+    @allure.step('Заполнить информацию об аренде: {delivery_day}, срок: {rent_duration}, цвет: {color}')
     def fill_rent_info(self, delivery_day, rent_duration, color, comment):
-        self.driver.find_element(*OrderPageLocators.DELIVERY_DATE_INPUT).click()
+        self.click(OrderPageLocators.DELIVERY_DATE_INPUT)
         day_locator = (By.XPATH, f'//div[contains(@class, "react-datepicker__day") and text()="{delivery_day}"]')
-        WebDriverWait(self.driver, 5).until(expected_conditions.element_to_be_clickable(day_locator)).click()
-        self.driver.find_element(*OrderPageLocators.RENT_INPUT).click()
+        self.click(day_locator)
+        self.click(OrderPageLocators.RENT_INPUT)
         rent_options = self.driver.find_elements(*OrderPageLocators.RENT_DROPDOWN)
         if rent_duration < len(rent_options):
             rent_options[rent_duration].click()
@@ -40,30 +38,27 @@ class OrderPage:
             rent_options[0].click()
 
         if color == 'black':
-            self.driver.find_element(*OrderPageLocators.SCOOTER_COLOR_BLACK).click()
+            self.click(OrderPageLocators.SCOOTER_COLOR_BLACK)
         elif color == 'grey':
-            self.driver.find_element(*OrderPageLocators.SCOOTER_COLOR_GRAY).click()
+            self.click(OrderPageLocators.SCOOTER_COLOR_GRAY)
 
-        self.driver.find_element(*OrderPageLocators.COMMENT_INPUT).send_keys(comment)
-        self.driver.find_element(*OrderPageLocators.ORDER_CONFIRM_BUTTON_BOTTOM).click()
-        WebDriverWait(self.driver, 5).until(expected_conditions.element_to_be_clickable(OrderPageLocators.ORDER_YES_BUTTON)).click()
+        self.enter_text(OrderPageLocators.COMMENT_INPUT, comment)
+        self.click(OrderPageLocators.ORDER_CONFIRM_BUTTON_BOTTOM)
+        self.click(OrderPageLocators.ORDER_YES_BUTTON)
 
+    @allure.step('Проверить, что заказ успешно оформлен')
     def is_order_successful(self):
-        return WebDriverWait(self.driver, 5).until(expected_conditions.visibility_of_element_located(OrderPageLocators.SUCCESS_MODAL))
+        return self.is_visible(OrderPageLocators.SUCCESS_MODAL)
 
+    @allure.step('Кликнуть по кнопке "Статус заказа"')
     def click_view_status_button(self):
-        self.driver.find_element(*OrderPageLocators.VIEW_STATUS_BUTTON).click()
+        self.click(OrderPageLocators.VIEW_STATUS_BUTTON)
 
+    @allure.step('Кликнуть по логотипу Самоката')
     def click_scooter_logo(self):
-        self.driver.find_element(*OrderPageLocators.SCOOTER_LOGO).click()
+        self.click(OrderPageLocators.SCOOTER_LOGO)
 
+    @allure.step('Кликнуть по логотипу Яндекса')
     def click_yandex_logo(self):
-        self.driver.find_element(*OrderPageLocators.YANDEX_LOGO).click()
+        self.click(OrderPageLocators.YANDEX_LOGO)
 
-    def switch_to_new_tab(self):
-        WebDriverWait(self.driver, 5).until(lambda d: len(d.window_handles) > 1)
-        new_tab = self.driver.window_handles[-1]
-        self.driver.switch_to.window(new_tab)
-
-    def get_current_url(self):
-        return self.driver.current_url

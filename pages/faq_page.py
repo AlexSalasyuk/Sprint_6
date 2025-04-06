@@ -1,26 +1,28 @@
-from selenium.webdriver.support.wait import WebDriverWait
-from selenium.webdriver.support import expected_conditions
 from selenium.webdriver.common.by import By
+from pages.base_page import BasePage
+import allure
 
-class FaqPage:
-    def __init__(self, driver):
-        self.driver = driver
-
+class FaqPage(BasePage):
+    @allure.step('Получить локатор вопроса №{index}')
     def get_question_locator(self, index):
         return (By.ID, f'accordion__heading-{index}')
 
+    @allure.step('Получить локатор ответа на вопрос №{index}')
     def get_answer_locator(self, index):
         return (By.ID, f'accordion__panel-{index}')
 
+    @allure.step('Скроллить и кликнуть по вопросу №{index}')
     def click_question(self, index):
         locator = self.get_question_locator(index)
-        question = WebDriverWait(self.driver, 5).until(expected_conditions.element_to_be_clickable(locator))
-        self.driver.execute_script('arguments[0].scrollIntoView();', question)
-        self.driver.execute_script('arguments[0].click();', question)
+        self.scroll_to(locator)
+        element = self.find(locator)
+        self.driver.execute_script('arguments[0].click();', element)
 
+    @allure.step('Ждать появления ответа на вопрос №{index}')
     def wait_for_answer_visible(self, index):
-        return WebDriverWait(self.driver, 5).until(expected_conditions.visibility_of_element_located(self.get_answer_locator(index)))
+        return self.is_visible(self.get_answer_locator(index))
 
+    @allure.step('Получить текст ответа на вопрос №{index}')
     def get_answer_text(self, index):
-        answer_element = self.wait_for_answer_visible(index)
-        return answer_element.text
+        locator = self.get_answer_locator(index)
+        return self.get_text(locator)
